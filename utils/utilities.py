@@ -51,3 +51,19 @@ def datacleaning_terry(df):
     df_imputed = df_imputed.drop(columns = 'poutcome')
     
     return df_imputed
+
+# bank.csv
+def datacleaning_justine(df):
+
+    df = df['age;"job";"marital";"education";"default";"balance";"housing";"loan";"contact";"day";"month";"duration";"campaign";"pdays";"previous";"poutcome";"y"'].str.split(';', expand=True)
+
+    new_column_names = [
+    "age", "job", "marital", "education", "default", "balance",
+    "housing", "loan", "contact", "day", "month", "duration",
+    "campaign", "pdays", "previous", "poutcome", "y"
+    ]
+
+    df.columns = new_column_names
+
+    return df    
+
