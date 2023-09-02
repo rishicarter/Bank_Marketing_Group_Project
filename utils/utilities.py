@@ -20,37 +20,56 @@ def datacleaning_<<YOUR_NAME>>():
 '''
 # bank-additional-full.csv
 def datacleaning_terry(df):
+    # replace "unknown" with NA
+    df_new = df
+    df_new = df_new.replace("unknown", np.nan)
     
-    df = df.replace("unknown", np.nan)
+    # define target variables
+    missing_columns = df_new.columns[df_new.isnull().any()]
     
-    missing_columns = df.columns[df.isnull().any()]
+    # define independent columns and target columns
+    df_not_missing = df_new[~df_new[missing_columns].isna().any(axis = 1)]
+    df_missing = df_new[df_new[missing_columns].isnull().any(axis=1)]
+
+    # define x variable for training data
+    x = df_not_missing.drop(columns = missing_columns)
+    x = x.drop(columns = ['y','poutcome'])
+    x = pd.get_dummies(x, columns=x.select_dtypes(include=['object']).columns) 
+
+    # define x variable for testing data
+    x_missing = df_missing.drop(columns = missing_columns)
+    x_missing = x_missing.drop(columns = ['y','poutcome'])
+    x_missing = pd.get_dummies(x_missing, columns=x_missing.select_dtypes(include=['object']).columns) 
     
-    df_missing = df[df[missing_columns].isnull().any(axis=1)]
-    df_not_missing = df[~df[missing_columns].isnull().any(axis=1)]
-    df_not_missing_encoded = pd.get_dummies(df_not_missing, columns=df_not_missing.select_dtypes(include=['object']).columns)
+    # Predict and fill the value for NA, one column at a time, for all target columns
+    for column in missing_columns:
+        print(column)
+        df_toFill = df_new[df_new[column].isna()]
+
+        # define y variable for training data, and the column to be filled
+        y = df_not_missing[column]
+        y_missing = df_missing[column]
+        
+        model = RandomForestClassifier()
+        model.fit(x, y)
+        
+        missing_values_predicted = model.predict(x_missing)             
+        
+        columns_to_fill = column
+        y_missing = np.where(y_missing.isna(), missing_values_predicted, y_missing)
+        
+        df_missing[column] = y_missing
+        
+    #concat the data back together, drop the "poutcome" column, and remove duplicate rows
+    df = pd.concat([df_not_missing, df_missing])
+    df = df.sort_index()
+    df = df.drop(columns = "poutcome")
+    df = df.drop_duplicates()
     
-    X = df_not_missing.drop(missing_columns, axis=1)
-    y = df_not_missing[missing_columns]
-    
-    X = X.drop(columns = ['poutcome','y'])
-    X_encode = pd.get_dummies(X, columns=X.select_dtypes(include=['object']).columns) 
-    
-    model = RandomForestClassifier()
-    model.fit(X_encode, y)
-    
-    X_missing = df_missing.drop(missing_columns, axis=1)
-    X_missing.drop(columns = ['poutcome','y'], inplace = True)
-    X_missing_encode = pd.get_dummies(X_missing, columns=X_missing.select_dtypes(include=['object']).columns) 
-    
-    missing_values_predicted = model.predict(X_missing_encode)
-    df_missing[missing_columns] = missing_values_predicted
-    
-    df_imputed = pd.concat([df_not_missing, df_missing])
-    
-    df_imputed = df_imputed.drop_duplicates()
-    df_imputed = df_imputed.drop(columns = 'poutcome')
-    
-    return df_imputed
+    return df
+        
+        
+
 
 # bank.csv
 def datacleaning_justine(df):
