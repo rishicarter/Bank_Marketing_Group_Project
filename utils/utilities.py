@@ -68,9 +68,48 @@ def datacleaning_justine(df):
     return df  
 
 #bank-full.csv
+def binay_col(df, col_name):
+    d1 = df.copy() 
+    d1[col_name] = (d1[col_name] == 'yes').astype('int64')
+    return d1
 def datacleaning_yuheng(df):
     d1 = df.copy()
-    ## Detect and remove outliers
+
+    ## replace 'unknown' values
+    d1 = d1.replace("unknown", np.nan)
+    d1 = d1.drop(columns='poutcome')
+    d1_testing = d1[d1.isnull().any(axis=1)]
+    d1_training = d1[d1.notnull().all(axis=1)]
+
+    for col_name in ['default', 'housing', 'loan']:
+        d1_training = binay_col(d1_training, col_name)
+        d1_testing = binay_col(d1_testing, col_name)
+
+    ## predict null values in columns: job, education, contact
+    null_columns = ['job','education', 'contact']
+    X = d1_training.drop(columns = null_columns).drop(columns = 'y')
+    y = d1_training[null_columns]
+    X_test = d1_testing.drop(columns = null_columns).drop(columns = 'y')
+    y_test = d1_testing[null_columns]
+
+    X_train_transformed = pd.get_dummies(X, columns=X.select_dtypes(include=['object']).columns) 
+    X_test_transformed = pd.get_dummies(X_test, columns=X_test.select_dtypes(include=['object']).columns) 
+
+    ## use random forest model to predict nan values
+    model = RandomForestClassifier()
+    model.fit(X_train_transformed, y)
+
+    ## replace only nan values from predictions, not using all predictions 
+    for j in range(0, len(y_test.values)):
+        item = y_test.values[j]
+        for i in range(0, len(item)):
+            if type(item[i]) != 'str':
+                item[i] = prediction[j][i]
+    d1_testing[null_columns] = y_test
+    d1 = pd.concat([d1_testing, d1_training])
+
+    
+    ## Detect and remove outliers in duration column
     # Calculate the upper and lower limits
     Q1 = d1['duration'].quantile(0.25)
     Q3 = d1['duration'].quantile(0.75)
@@ -80,8 +119,6 @@ def datacleaning_yuheng(df):
  
     # Remove outliers
     d1 = d1[d1['duration'] <= upper].reset_index(inplace= False)
-
     d1 = d1.drop_duplicates()
-    d1 = d1.drop(columns = 'poutcome')
     return d1
 
