@@ -103,7 +103,7 @@ def datacleaning_yuheng(df):
     for j in range(0, len(y_test.values)):
         item = y_test.values[j]
         for i in range(0, len(item)):
-            if type(item[i]) != 'str':
+            if type(item[i]) == float:
                 item[i] = prediction[j][i]
     d1_testing[null_columns] = y_test
     d1 = pd.concat([d1_testing, d1_training])
