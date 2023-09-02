@@ -65,5 +65,23 @@ def datacleaning_justine(df):
 
     df.columns = new_column_names
 
-    return df    
+    return df  
+
+#bank-full.csv
+def datacleaning_yuheng(df):
+    d1 = df.copy()
+    ## Detect and remove outliers
+    # Calculate the upper and lower limits
+    Q1 = d1['duration'].quantile(0.25)
+    Q3 = d1['duration'].quantile(0.75)
+    IQR = Q3 - Q1
+    lower = Q1 - 1.5*IQR
+    upper = Q3 + 1.5*IQR
+ 
+    # Remove outliers
+    d1 = d1[d1['duration'] <= upper].reset_index(inplace= False)
+
+    d1 = d1.drop_duplicates()
+    d1 = d1.drop(columns = 'poutcome')
+    return d1
 
