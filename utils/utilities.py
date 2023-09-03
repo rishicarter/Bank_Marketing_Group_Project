@@ -18,6 +18,40 @@ def datacleaning_<<YOUR_NAME>>():
     return 0
 
 '''
+# bank-additional.csv
+def datacleaning_rishi(df):
+    '''
+    Clean and transform categorical and numerical columns.
+    '''
+    df=df.copy()
+
+    # Replace 'unkown' with NaN
+    df.replace('unknown', np.nan, inplace=True)
+
+    # Clean categorical columns - Impute Missing Values
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col].fillna(df[col].mode().values[0], inplace=True)
+
+    # Column Transformations
+    for col in df.select_dtypes(include=['int64']).columns:
+        df[col]=df[col].astype(np.float64)
+
+    for col in ['default', 'housing', 'loan', 'y']:
+        df[col]=np.where(df[col]=='yes', 1.0, 0.0)
+
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col]=df[col].astype('category')
+
+    # Clean numerical columns - Normalize using MinMax
+    for col in df.select_dtypes(include=['float64']).columns:
+        min_value = df[col].min()
+        max_value = df[col].max()
+        df[col]=((df[col] - min_value) / (max_value - min_value))
+
+    return df
+
+
+
 # bank-additional-full.csv
 def datacleaning_terry(df):
     # replace "unknown" with NA
@@ -140,4 +174,7 @@ def datacleaning_yuheng(df):
     d1 = d1[d1['duration'] <= upper].reset_index(inplace= False)
     d1 = d1.drop_duplicates()
     return d1
+
+
+
 
